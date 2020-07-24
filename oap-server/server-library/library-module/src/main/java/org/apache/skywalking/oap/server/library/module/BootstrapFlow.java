@@ -26,6 +26,9 @@ import org.apache.skywalking.oap.server.library.util.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 启动流程
+ */
 class BootstrapFlow {
     private static final Logger logger = LoggerFactory.getLogger(BootstrapFlow.class);
 
@@ -54,17 +57,26 @@ class BootstrapFlow {
             }
             logger.info("start the provider {} in {} module.", provider.name(), provider.getModuleName());
             provider.requiredCheck(provider.getModule().services());
-
+            // 启动 provider
             provider.start();
         }
     }
 
+    /**
+     * 通知所有观察者启动完成
+     * @throws ServiceNotProvidedException
+     * @throws ModuleStartException
+     */
     void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
         for (ModuleProvider provider : startupSequence) {
             provider.notifyAfterCompleted();
         }
     }
 
+    /**
+     * 优先加载无依赖Module，再加载依赖其他Modules的Module
+     * @throws CycleDependencyException
+     */
     private void makeSequence() throws CycleDependencyException {
         List<ModuleProvider> allProviders = new ArrayList<>();
         loadedModules.forEach((moduleName, module) -> allProviders.add(module.provider()));

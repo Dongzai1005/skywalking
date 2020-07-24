@@ -26,6 +26,7 @@ import org.apache.skywalking.oap.server.starter.config.ApplicationConfigLoader;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsTag;
+import org.apache.skywalking.oap.server.telemetry.none.MetricsCreatorNoop;
 
 /**
  * Starter core. Load the core configuration file, and initialize the startup sequence through {@link ModuleManager}.
@@ -42,6 +43,10 @@ public class OAPServerBootstrap {
             ApplicationConfiguration applicationConfiguration = configLoader.load();
             manager.init(applicationConfiguration);
 
+            /**
+             * 默认创建 {@link MetricsCreatorNoop}，空bean，不记录
+             * 向遥测服务上报启动时间
+             */
             manager.find(TelemetryModule.NAME)
                    .provider()
                    .getService(MetricsCreator.class)

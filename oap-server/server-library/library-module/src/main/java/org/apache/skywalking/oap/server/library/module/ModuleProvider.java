@@ -47,6 +47,7 @@ public abstract class ModuleProvider implements ModuleServiceHolder {
     public abstract String name();
 
     /**
+     * 持有 {@link ModuleDefine} 实例，初始化时，用于 bean 比较
      * @return the moduleDefine name
      */
     public abstract Class<? extends ModuleDefine> module();

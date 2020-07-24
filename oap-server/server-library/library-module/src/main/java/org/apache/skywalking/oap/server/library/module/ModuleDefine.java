@@ -66,6 +66,8 @@ public abstract class ModuleDefine implements ModuleProviderHolder {
                 continue;
             }
 
+            // provider H2StorageProvider
+            // provider.module() StorageModule.class, getClass()为调用者类
             if (provider.module().equals(getClass())) {
                 if (loadedProvider == null) {
                     loadedProvider = provider;
@@ -92,6 +94,7 @@ public abstract class ModuleDefine implements ModuleProviderHolder {
         } catch (IllegalAccessException e) {
             throw new ModuleConfigException(this.name() + " module config transport to config bean failure.", e);
         }
+        // provider prepare阶段，初始化依赖资源
         loadedProvider.prepare();
     }
 

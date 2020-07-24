@@ -31,6 +31,11 @@ public class ApplicationConfiguration {
         return modules.keySet().toArray(new String[0]);
     }
 
+    /**
+     * 添加moduleName
+     * @param moduleName
+     * @return {@link ModuleConfiguration}
+     */
     public ModuleConfiguration addModule(String moduleName) {
         ModuleConfiguration newModule = new ModuleConfiguration();
         modules.put(moduleName, newModule);

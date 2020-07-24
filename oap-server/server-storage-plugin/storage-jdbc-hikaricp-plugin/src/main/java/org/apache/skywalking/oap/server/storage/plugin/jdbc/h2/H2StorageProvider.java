@@ -99,6 +99,11 @@ public class H2StorageProvider extends ModuleProvider {
         return config;
     }
 
+    /**
+     * 准备阶段
+     * @throws ServiceNotProvidedException
+     * @throws ModuleStartException
+     */
     @Override
     public void prepare() throws ServiceNotProvidedException, ModuleStartException {
         Properties settings = new Properties();

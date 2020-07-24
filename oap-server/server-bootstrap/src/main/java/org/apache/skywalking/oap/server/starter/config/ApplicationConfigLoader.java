@@ -24,6 +24,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.apm.util.PropertyPlaceholderHelper;
 import org.apache.skywalking.oap.server.library.module.ApplicationConfiguration;
@@ -45,6 +48,14 @@ public class ApplicationConfigLoader implements ConfigLoader<ApplicationConfigur
 
     private final Yaml yaml = new Yaml();
 
+    private static Gson gson;
+
+    static {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.disableHtmlEscaping();
+        gson = gsonBuilder.create();
+    }
+
     @Override
     public ApplicationConfiguration load() throws ConfigFileNotFoundException {
         ApplicationConfiguration configuration = new ApplicationConfiguration();
@@ -53,16 +64,24 @@ public class ApplicationConfigLoader implements ConfigLoader<ApplicationConfigur
         return configuration;
     }
 
+    /**
+     * 加载sw Provider配置数据
+     * {@link ApplicationConfiguration.ModuleConfiguration#addProviderConfiguration(String, Properties)}}
+     * @param configuration
+     * @throws ConfigFileNotFoundException
+     */
     @SuppressWarnings("unchecked")
     private void loadConfig(ApplicationConfiguration configuration) throws ConfigFileNotFoundException {
         try {
             Reader applicationReader = ResourceUtils.read("application.yml");
+            // key: application.yml 一级key
             Map<String, Map<String, Object>> moduleConfig = yaml.loadAs(applicationReader, Map.class);
             if (CollectionUtils.isNotEmpty(moduleConfig)) {
                 selectConfig(moduleConfig);
                 moduleConfig.forEach((moduleName, providerConfig) -> {
                     if (providerConfig.size() > 0) {
                         log.info("Get a module define from application.yml, module name: {}", moduleName);
+                        // 记录sw配置的moduleName
                         ApplicationConfiguration.ModuleConfiguration moduleConfiguration = configuration.addModule(
                             moduleName);
                         providerConfig.forEach((providerName, config) -> {
@@ -87,6 +106,7 @@ public class ApplicationConfigLoader implements ConfigLoader<ApplicationConfigur
                                     }
                                 });
                             }
+                            // 解析配置数据及类型
                             moduleConfiguration.addProviderConfiguration(providerName, properties);
                         });
                     } else {
@@ -97,11 +117,19 @@ public class ApplicationConfigLoader implements ConfigLoader<ApplicationConfigur
                     }
                 });
             }
+            log.info("ApplicationConfiguration->{}", gson.toJson(configuration));
         } catch (FileNotFoundException e) {
             throw new ConfigFileNotFoundException(e.getMessage(), e);
         }
     }
 
+    /**
+     * 解析属性值及数据类型
+     * @param propertyName
+     * @param propertyValue
+     * @param target
+     * @param providerName
+     */
     private void replacePropertyAndLog(final Object propertyName, final Object propertyValue, final Properties target,
                                        final Object providerName) {
         final String valueString = PropertyPlaceholderHelper.INSTANCE
@@ -132,24 +160,31 @@ public class ApplicationConfigLoader implements ConfigLoader<ApplicationConfigur
         }
     }
 
+    /**
+     * application.yml selector标签，解析sw selector配置，去掉未使用配置
+     * @param moduleConfiguration
+     */
     private void selectConfig(final Map<String, Map<String, Object>> moduleConfiguration) {
         final Set<String> modulesWithoutProvider = new HashSet<>();
         for (final Map.Entry<String, Map<String, Object>> entry : moduleConfiguration.entrySet()) {
+            // application.yml 一级key
             final String moduleName = entry.getKey();
             final Map<String, Object> providerConfig = entry.getValue();
             if (!providerConfig.containsKey(SELECTOR)) {
                 continue;
             }
-            final String selector = (String) providerConfig.get(SELECTOR);
+            final String selector = (String) providerConfig.get(SELECTOR); // ${SW_CLUSTER:standalone}
             final String resolvedSelector = PropertyPlaceholderHelper.INSTANCE.replacePlaceholders(
                 selector, System.getProperties()
             );
+            // 只保留selector配置
             providerConfig.entrySet().removeIf(e -> !resolvedSelector.equals(e.getKey()));
 
             if (!providerConfig.isEmpty()) {
                 continue;
             }
 
+            // 禁用配置 selector: -
             if (!DISABLE_SELECTOR.equals(resolvedSelector)) {
                 throw new ProviderNotFoundException(
                     "no provider found for module " + moduleName + ", " +
@@ -162,6 +197,10 @@ public class ApplicationConfigLoader implements ConfigLoader<ApplicationConfigur
             modulesWithoutProvider.add(moduleName);
         }
 
+        log.info("moduleConfiguration->{}", gson.toJson(moduleConfiguration));
+        log.info("modulesWithoutProvider->{}", gson.toJson(modulesWithoutProvider));
+
+        // 删除没有Provider的配置
         moduleConfiguration.entrySet().removeIf(e -> {
             final String module = e.getKey();
             final boolean shouldBeRemoved = modulesWithoutProvider.contains(module);
@@ -172,6 +211,7 @@ public class ApplicationConfigLoader implements ConfigLoader<ApplicationConfigur
 
             return shouldBeRemoved;
         });
+        log.info("moduleConfiguration->{}", gson.toJson(moduleConfiguration));
     }
 
     private void overrideModuleSettings(ApplicationConfiguration configuration, String key, String value) {
