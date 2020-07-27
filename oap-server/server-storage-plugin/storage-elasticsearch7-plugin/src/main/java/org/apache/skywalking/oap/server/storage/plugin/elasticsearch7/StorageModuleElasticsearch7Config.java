@@ -18,7 +18,20 @@
 
 package org.apache.skywalking.oap.server.storage.plugin.elasticsearch7;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.StorageModuleElasticsearchConfig;
 
+@Getter
+@Setter
 public class StorageModuleElasticsearch7Config extends StorageModuleElasticsearchConfig {
+
+    private boolean useKafka;
+    private String bootstrapServers;
+    private String traceTopicName;
+    private int retries = 3;
+    private int batchSize = 100;
+    private String acks = "all";
+    private String keySerializer = "org.apache.kafka.common.serialization.StringSerializer";
+    private String valueSerializer = "org.apache.kafka.common.serialization.StringSerializer";
 }

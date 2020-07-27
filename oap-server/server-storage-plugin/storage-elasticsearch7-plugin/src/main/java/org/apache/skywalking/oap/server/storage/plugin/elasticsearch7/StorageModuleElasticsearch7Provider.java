@@ -24,7 +24,12 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.skywalking.apm.util.StringUtil;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.storage.IBatchDAO;
@@ -80,6 +85,7 @@ public class StorageModuleElasticsearch7Provider extends ModuleProvider {
 
     protected final StorageModuleElasticsearch7Config config;
     protected ElasticSearch7Client elasticSearch7Client;
+    protected KafkaProducer kafkaProducer;
 
     public StorageModuleElasticsearch7Provider() {
         super();
@@ -141,9 +147,18 @@ public class StorageModuleElasticsearch7Provider extends ModuleProvider {
                 indexNameConverters(config.getNameSpace())
         );
 
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServers());
+        props.put(ProducerConfig.ACKS_CONFIG, config.getAcks());
+        props.put(ProducerConfig.BATCH_SIZE_CONFIG, config.getBatchSize());
+        props.put(ProducerConfig.RETRIES_CONFIG, config.getRetries());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, config.getKeySerializer());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, config.getValueSerializer());
+        kafkaProducer = new KafkaProducer<String, String>(props);
+
         this.registerServiceImplementation(
                 IBatchDAO.class, new BatchProcessEsDAO(elasticSearch7Client, config.getBulkActions(),
-                        config.getFlushInterval(), config.getConcurrentRequests()
+                        config.getFlushInterval(), config.getConcurrentRequests(), config.isUseKafka(), kafkaProducer, config.getTraceTopicName()
                 ));
         this.registerServiceImplementation(StorageDAO.class, new StorageEs7DAO(elasticSearch7Client));
         this.registerServiceImplementation(
