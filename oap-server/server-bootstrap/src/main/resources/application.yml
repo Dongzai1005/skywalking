@@ -49,10 +49,10 @@ core:
     # Receiver: Receive agent data, Level 1 aggregate
     # Aggregator: Level 2 aggregate
     role: ${SW_CORE_ROLE:Mixed} # Mixed/Receiver/Aggregator
-    restHost: ${SW_CORE_REST_HOST:0.0.0.0}
+    restHost: ${SW_CORE_REST_HOST:172.23.1.18}
     restPort: ${SW_CORE_REST_PORT:12800}
     restContextPath: ${SW_CORE_REST_CONTEXT_PATH:/}
-    gRPCHost: ${SW_CORE_GRPC_HOST:0.0.0.0}
+    gRPCHost: ${SW_CORE_GRPC_HOST:172.23.1.18}
     gRPCPort: ${SW_CORE_GRPC_PORT:11800}
     gRPCSslEnabled: ${SW_CORE_GRPC_SSL_ENABLED:false}
     gRPCSslKeyPath: ${SW_CORE_GRPC_SSL_KEY_PATH:""}
@@ -105,7 +105,7 @@ storage:
     profileTaskQueryMaxSize: ${SW_STORAGE_ES_QUERY_PROFILE_TASK_SIZE:200}
     advanced: ${SW_STORAGE_ES_ADVANCED:""}
   elasticsearch7:
-    nameSpace: ${SW_NAMESPACE:""}
+    nameSpace: ${SW_NAMESPACE:"sw8"}
     clusterNodes: 192.168.20.45:9200,192.168.20.39:9200,192.168.20.68:9200
     protocol: ${SW_STORAGE_ES_HTTP_PROTOCOL:"http"}
     trustStorePath: ${SW_STORAGE_ES_SSL_JKS_PATH:""}
@@ -126,7 +126,7 @@ storage:
     segmentQueryMaxSize: ${SW_STORAGE_ES_QUERY_SEGMENT_SIZE:200}
     profileTaskQueryMaxSize: ${SW_STORAGE_ES_QUERY_PROFILE_TASK_SIZE:200}
     advanced: ${SW_STORAGE_ES_ADVANCED:""}
-    useKafka: false
+    useKafka: true
     bootstrapServers: 127.0.0.1:9092
 #    bootstrapServers: 192.168.20.61:9092,192.168.20.73:9092,192.168.20.58:9092
     traceTopicName: skywalking_test_trace_topic

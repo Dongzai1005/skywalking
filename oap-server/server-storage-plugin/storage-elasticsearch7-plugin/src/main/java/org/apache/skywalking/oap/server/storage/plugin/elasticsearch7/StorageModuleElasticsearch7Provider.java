@@ -158,7 +158,8 @@ public class StorageModuleElasticsearch7Provider extends ModuleProvider {
 
         this.registerServiceImplementation(
                 IBatchDAO.class, new BatchProcessEsDAO(elasticSearch7Client, config.getBulkActions(),
-                        config.getFlushInterval(), config.getConcurrentRequests(), config.isUseKafka(), kafkaProducer, config.getTraceTopicName()
+                        config.getFlushInterval(), config.getConcurrentRequests(), config.isUseKafka(), kafkaProducer,
+                        config.getTraceTopicName(), config.getNameSpace()
                 ));
         this.registerServiceImplementation(StorageDAO.class, new StorageEs7DAO(elasticSearch7Client));
         this.registerServiceImplementation(

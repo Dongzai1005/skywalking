@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.skywalking.oap.server.core.Const;
 import org.apache.skywalking.oap.server.core.storage.IBatchDAO;
 import org.apache.skywalking.oap.server.library.client.elasticsearch.ElasticSearchClient;
 import org.apache.skywalking.oap.server.library.client.request.InsertRequest;
@@ -48,6 +49,7 @@ public class BatchProcessEsDAO extends EsDAO implements IBatchDAO {
     private KafkaProducer kafkaProducer;
     private String topicName;
     private boolean useKafka;
+    private String nameSpace;
 
     private static Gson gson;
 
@@ -64,7 +66,8 @@ public class BatchProcessEsDAO extends EsDAO implements IBatchDAO {
         this.concurrentRequests = concurrentRequests;
     }
 
-    public BatchProcessEsDAO(ElasticSearchClient client, int bulkActions, int flushInterval, int concurrentRequests, boolean useKafka, KafkaProducer kafkaProducer, String topicName) {
+    public BatchProcessEsDAO(ElasticSearchClient client, int bulkActions, int flushInterval, int concurrentRequests,
+                             boolean useKafka, KafkaProducer kafkaProducer, String topicName, String nameSpace) {
         super(client);
         this.bulkActions = bulkActions;
         this.flushInterval = flushInterval;
@@ -72,6 +75,7 @@ public class BatchProcessEsDAO extends EsDAO implements IBatchDAO {
         this.kafkaProducer = kafkaProducer;
         this.topicName = topicName;
         this.useKafka = useKafka;
+        this.nameSpace = nameSpace;
     }
 
     @Override
@@ -82,7 +86,7 @@ public class BatchProcessEsDAO extends EsDAO implements IBatchDAO {
 
         IndexRequest indexRequest = (IndexRequest) insertRequest;
         String name = indexRequest.index();
-        if (useKafka && name != null && name.startsWith("segment")) {
+        if (useKafka && name != null && name.startsWith(nameSpace + Const.ID_CONNECTOR + "segment")) {
             String id = indexRequest.id();
             Map<String, Object> map = indexRequest.sourceAsMap();
             ProducerRecord producerRecord = new ProducerRecord(topicName, id, gson.toJson(map));
@@ -100,7 +104,7 @@ public class BatchProcessEsDAO extends EsDAO implements IBatchDAO {
                 if (prepareRequest instanceof InsertRequest) {
                     IndexRequest indexRequest = (IndexRequest) prepareRequest;
                     String name = indexRequest.index();
-                    if (useKafka && name != null && name.startsWith("segment")) {
+                    if (useKafka && name != null && name.startsWith(nameSpace + Const.ID_CONNECTOR + "segment")) {
                         String id = indexRequest.id();
                         Map<String, Object> map = indexRequest.sourceAsMap();
                         ProducerRecord producerRecord = new ProducerRecord(topicName, id, gson.toJson(map));
@@ -110,7 +114,7 @@ public class BatchProcessEsDAO extends EsDAO implements IBatchDAO {
                 } else {
                     UpdateRequest updateRequest = (UpdateRequest) prepareRequest;
                     String name = updateRequest.index();
-                    if (useKafka && name != null && name.startsWith("segment")) {
+                    if (useKafka && name != null && name.startsWith(nameSpace + Const.ID_CONNECTOR + "segment")) {
                         String id = updateRequest.id();
                         Map<String, Object> map = updateRequest.doc().sourceAsMap();
                         ProducerRecord producerRecord = new ProducerRecord(topicName, id, gson.toJson(map));
